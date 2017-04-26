@@ -5,7 +5,7 @@
 :local wirelessEnabled 0;
 :local wlanFrequency "auto";
 :local wlanSSID "MYSSID";
-:local wlanKey "xxxxxxx";
+:local wlanKey "xxxxxxxx";
 :local wlanInterface "wlan1";
 
 #------------------------------------------------------------------------------
