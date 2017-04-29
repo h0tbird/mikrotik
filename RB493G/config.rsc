@@ -3,6 +3,7 @@
 #------------------------------------------------------------------------------
 
 :local wlanEnabled 0
+:local wlanGuestEnabled 1
 :local wlanFrequency "auto"
 
 :local localWlanInterface "wlan1"
@@ -18,7 +19,6 @@
 # Packages:
 #------------------------------------------------------------------------------
 
-# Wireless is automatically set if package is installed:
 :if ([:len [/system package find name="wireless" !disabled]] != 0) do={
   :set wlanEnabled 1
 }
@@ -27,7 +27,6 @@
 # Wireless:
 #------------------------------------------------------------------------------
 
-# Set up the wireless interfaces:
 :if ( $wlanEnabled = 1 ) do={
 
   # Cleanup:
@@ -46,21 +45,26 @@
     ssid=$localWlanSSID country=spain hide-ssid=no wireless-protocol=802.11
   }
 
-  # Guest bridge:
-  /interface bridge {
-    remove [find name=$guestBridge]
-    add name=$guestBridge
-  }
+  :if ( $wlanGuestEnabled = 1 ) do={
 
-  # Guest network:
-  /interface wireless {
-    security-profiles add name="guest" mode=dynamic-keys \
-    authentication-types=wpa2-psk wpa2-pre-shared-key=$guestWlanKey
-    add disabled=no master-interface=$localWlanInterface \
-    mode=ap-bridge name=$guestWlanInterface ssid=$guestWlanSSID \
-    wds-default-bridge=$guestBridge wps-mode=disabled
-  }
+    # Guest bridge:
+    /interface bridge {
+      remove [find name=$guestBridge]
+      add name=$guestBridge
+    }
 
-  # Bridge port:
-  /interface bridge port add bridge=$guestBridge interface=$guestWlanInterface
+    # Guest network:
+    /interface wireless {
+      security-profiles add name="guest" mode=dynamic-keys \
+      authentication-types=wpa2-psk wpa2-pre-shared-key=$guestWlanKey
+      add disabled=no master-interface=$localWlanInterface \
+      mode=ap-bridge name=$guestWlanInterface ssid=$guestWlanSSID \
+      wds-default-bridge=$guestBridge wps-mode=disabled
+    }
+
+    # Bridge port:
+    /interface bridge port {
+      add bridge=$guestBridge interface=$guestWlanInterface
+    }
+  }
 }
