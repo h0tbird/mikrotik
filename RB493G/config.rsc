@@ -12,6 +12,9 @@
 
 :local guestBridge "guest1"
 :local guestWlanInterface "wlan2"
+:local guestNetwork "10.1.0.0"
+:local guestIPAddress "10.1.0.0/24"
+:local guestLeaseRange "10.1.0.100-10.1.0.254"
 :local guestWlanSSID "XXX-GUEST_WLAN_SSID-XXX"
 :local guestWlanKey "XXX-GUEST_WLAN_KEY-XXX"
 
@@ -29,14 +32,26 @@
 
 :if ( $wlanEnabled = 1 ) do={
 
-  # Cleanup:
+  # Cleanup wireless:
   /interface wireless {
     reset-configuration [/interface wireless find]
     security-profiles remove [find name!=default]
-    remove [find name=$guestWlanInterface]
+    remove [find name="$guestWlanInterface"]
   }
 
-  # Resident network:
+  # Cleanup bridge:
+  /interface bridge {
+    port remove [find bridge="$guestBridge"]
+    remove [find name="$guestBridge"]
+  }
+
+  # Cleanup IP:
+  /ip {
+    address remove [find address="$guestIPAddress"]
+    pool remove [find name="guest-pool"]
+  }
+
+  # Residents WiFi network:
   /interface wireless {
     security-profiles add name="local" mode=dynamic-keys \
     authentication-types=wpa2-psk wpa2-pre-shared-key=$localWlanKey
@@ -47,13 +62,10 @@
 
   :if ( $wlanGuestEnabled = 1 ) do={
 
-    # Guest bridge:
-    /interface bridge {
-      remove [find name=$guestBridge]
-      add name=$guestBridge
-    }
+    # Guests bridge:
+    /interface bridge add name=$guestBridge
 
-    # Guest network:
+    # Guests WiFi network:
     /interface wireless {
       security-profiles add name="guest" mode=dynamic-keys \
       authentication-types=wpa2-psk wpa2-pre-shared-key=$guestWlanKey
@@ -62,9 +74,9 @@
       wds-default-bridge=$guestBridge wps-mode=disabled
     }
 
-    # Bridge port:
-    /interface bridge port {
-      add bridge=$guestBridge interface=$guestWlanInterface
-    }
+    # Bridge port, IP address and pool:
+    /interface bridge port add bridge=$guestBridge interface=$guestWlanInterface
+    /ip address add address=$guestIPAddress interface=$guestBridge network=$guestNetwork
+    /ip pool add name=guest-pool ranges=$guestLeaseRange
   }
 }
