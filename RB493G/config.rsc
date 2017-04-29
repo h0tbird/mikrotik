@@ -2,7 +2,9 @@
 # Variables:
 #------------------------------------------------------------------------------
 
+:local dhcpEnabled 0
 :local wlanEnabled 0
+
 :local wlanGuestEnabled 1
 :local wlanFrequency "auto"
 
@@ -24,6 +26,10 @@
 
 :if ([:len [/system package find name="wireless" !disabled]] != 0) do={
   :set wlanEnabled 1
+}
+
+:if ([:len [/system package find name="dhcp" !disabled]] != 0) do={
+  :set dhcpEnabled 1
 }
 
 #------------------------------------------------------------------------------
@@ -49,6 +55,7 @@
   /ip {
     address remove [find address="$guestIPAddress"]
     pool remove [find name="guest-pool"]
+    dhcp-server remove [find name="guest-dhcp"]
   }
 
   # Residents WiFi network:
@@ -74,9 +81,16 @@
       wds-default-bridge=$guestBridge wps-mode=disabled
     }
 
-    # Bridge port, IP address and pool:
+    # Bridge port:
     /interface bridge port add bridge=$guestBridge interface=$guestWlanInterface
-    /ip address add address=$guestIPAddress interface=$guestBridge network=$guestNetwork
-    /ip pool add name=guest-pool ranges=$guestLeaseRange
+
+    :if ( $dhcpEnabled = 1 ) do={
+
+      /ip {
+        address add address=$guestIPAddress interface=$guestBridge network=$guestNetwork
+        pool add name=guest-pool ranges=$guestLeaseRange
+        dhcp-server add address-pool=guest-pool disabled=no interface=$guestBridge name=guest-dhcp
+      }
+    }
   }
 }
