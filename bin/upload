@@ -1,0 +1,37 @@
+#!/bin/bash
+
+#------------------------------------------------------------------------------
+# Input sanity checks:
+#------------------------------------------------------------------------------
+
+[ $# -ne 1 ] && echo "Usage: $0 file" && exit 1
+[ ! -f "${1}" ] && echo "${1} is not a file" && exit 1
+
+#------------------------------------------------------------------------------
+# Find and replace:
+#------------------------------------------------------------------------------
+
+function findReplace {
+  [[ "${1}" && "${2}" ]] && sed "s#${1}#${2}#" || cat
+}
+
+#------------------------------------------------------------------------------
+# Source the secrets:
+#------------------------------------------------------------------------------
+
+[ -d ${HOME}/secrets ] && {
+  for file in ${HOME}/secrets/*/*.sh; do
+    source $file
+  done
+}
+
+#------------------------------------------------------------------------------
+# Find, replace and upload:
+#------------------------------------------------------------------------------
+
+cat ${1} |
+findReplace 'XXX-LOCAL_WLAN_SSID-XXX' "${LOCAL_WLAN_SSID:-local}" |
+findReplace 'XXX-LOCAL_WLAN_KEY-XXX' "${LOCAL_WLAN_KEY:-12345678}" |
+findReplace 'XXX-GUEST_WLAN_SSID-XXX' "${GUEST_WLAN_SSID:-guest}" |
+findReplace 'XXX-GUEST_WLAN_KEY-XXX' "${GUEST_WLAN_KEY:-12345678}" |
+curl -sT - ftp://192.168.1.1/$(basename ${1}) --user ${MT_USER:-admin}:${MT_PASS:-}
