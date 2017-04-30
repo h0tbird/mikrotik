@@ -14,9 +14,9 @@
 
 :local guestBridge "guest1"
 :local guestWlanInterface "wlan2"
-:local guestNetwork "10.1.0.0"
 :local guestNetMask "24"
-:local guestIPAddress "10.1.0.1/24"
+:local guestGateway "10.1.0.1"
+:local guestNetwork "10.1.0.0"
 :local guestDNSServer "8.8.8.8"
 :local guestLeaseRange "10.1.0.100-10.1.0.254"
 :local guestWlanSSID "XXX-GUEST_WLAN_SSID-XXX"
@@ -55,54 +55,54 @@
 
   # Cleanup IP:
   /ip {
-    address remove [find address="$guestIPAddress"]
+    address remove [find address="$guestGateway/$guestNetMask"]
     pool remove [find name="guest-pool"]
     dhcp-server remove [find name="guest-dhcp"]
     dhcp-server network remove [find address="$guestNetwork/$guestNetMask"]
-    firewall nat remove [find src-address="$guestIPAddress"]
+    firewall nat remove [find src-address="$guestGateway/$guestNetMask"]
     firewall filter remove [find in-interface="$guestBridge"]
   }
 
   # Residents WiFi network:
   /interface wireless {
     security-profiles add name=local mode=dynamic-keys \
-    authentication-types=wpa2-psk wpa2-pre-shared-key=$localWlanKey
+    authentication-types=wpa2-psk wpa2-pre-shared-key="$localWlanKey"
     set $localWlanInterface band=5ghz-onlyn disabled=no \
-    frequency=$wlanFrequency mode=ap-bridge security-profile=local \
-    ssid=$localWlanSSID country=spain hide-ssid=no wireless-protocol=802.11
+    frequency="$wlanFrequency" mode=ap-bridge security-profile=local \
+    ssid="$localWlanSSID" country=spain hide-ssid=no wireless-protocol=802.11
   }
 
   :if ( $wlanGuestEnabled = 1 ) do={
 
     # Guests bridge:
-    /interface bridge add name=$guestBridge
+    /interface bridge add name="$guestBridge"
 
     # Guests WiFi network:
     /interface wireless {
       security-profiles add name=guest mode=dynamic-keys \
-      authentication-types=wpa2-psk wpa2-pre-shared-key=$guestWlanKey
-      add disabled=no master-interface=$localWlanInterface \
-      mode=ap-bridge name=$guestWlanInterface security-profile=guest \
-      ssid=$guestWlanSSID wds-default-bridge=$guestBridge wps-mode=disabled
+      authentication-types=wpa2-psk wpa2-pre-shared-key="$guestWlanKey"
+      add disabled=no master-interface="$localWlanInterface" \
+      mode=ap-bridge name="$guestWlanInterface" security-profile=guest \
+      ssid="$guestWlanSSID" wds-default-bridge="$guestBridge" wps-mode=disabled
     }
 
     # Guests bridge port:
-    /interface bridge port add bridge=$guestBridge interface=$guestWlanInterface
+    /interface bridge port add bridge="$guestBridge" interface="$guestWlanInterface"
 
     # Guests DHCP:
     :if ( $dhcpEnabled = 1 ) do={ /ip {
-        address add address=$guestIPAddress interface=$guestBridge network=$guestNetwork
-        pool add name=guest-pool ranges=$guestLeaseRange
-        dhcp-server add address-pool=guest-pool disabled=no interface=$guestBridge name=guest-dhcp
+        address add address="$guestGateway/$guestNetMask" interface="$guestBridge" network="$guestNetwork"
+        pool add name=guest-pool ranges="$guestLeaseRange"
+        dhcp-server add address-pool=guest-pool disabled=no interface="$guestBridge" name=guest-dhcp
         dhcp-server network add address="$guestNetwork/$guestNetMask" \
-        dns-server=$guestDNSServer gateway=10.1.0.1 netmask=$guestNetMask
+        dns-server="$guestDNSServer" gateway="$guestGateway" netmask="$guestNetMask"
       }
     }
 
     # Guests firewall:
     /ip firewall {
-      nat add action=masquerade chain=srcnat out-interface=FTTH src-address=$guestIPAddress
-      filter add action=drop chain=forward in-interface=$guestBridge out-interface=!FTTH
+      nat add action=masquerade chain=srcnat out-interface=FTTH src-address="$guestGateway/$guestNetMask"
+      filter add action=drop chain=forward in-interface="$guestBridge" out-interface=!FTTH
     }
   }
 }
