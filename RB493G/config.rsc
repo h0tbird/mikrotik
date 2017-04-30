@@ -56,6 +56,9 @@
     address remove [find address="$guestIPAddress"]
     pool remove [find name="guest-pool"]
     dhcp-server remove [find name="guest-dhcp"]
+    dhcp-server network remove [find address="$guestIPAddress"]
+    firewall nat remove [find src-address="$guestIPAddress"]
+    firewall filter remove [find in-interface="$guestBridge"]
   }
 
   # Residents WiFi network:
@@ -90,6 +93,9 @@
         address add address=$guestIPAddress interface=$guestBridge network=$guestNetwork
         pool add name=guest-pool ranges=$guestLeaseRange
         dhcp-server add address-pool=guest-pool disabled=no interface=$guestBridge name=guest-dhcp
+        dhcp-server network add address=$guestIPAddress dns-server=10.1.0.1 gateway=10.1.0.1 netmask=24
+        firewall nat add action=masquerade chain=srcnat out-interface=FTTH src-address=$guestIPAddress
+        firewall filter add action=drop chain=forward in-interface=$guestBridge out-interface=!FTTH
       }
     }
   }
