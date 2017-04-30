@@ -15,7 +15,8 @@
 :local guestBridge "guest1"
 :local guestWlanInterface "wlan2"
 :local guestNetwork "10.1.0.0"
-:local guestIPAddress "10.1.0.0/24"
+:local guestNetMask "24"
+:local guestIPAddress "10.1.0.1/24"
 :local guestDNSServer "8.8.8.8"
 :local guestLeaseRange "10.1.0.100-10.1.0.254"
 :local guestWlanSSID "XXX-GUEST_WLAN_SSID-XXX"
@@ -57,14 +58,14 @@
     address remove [find address="$guestIPAddress"]
     pool remove [find name="guest-pool"]
     dhcp-server remove [find name="guest-dhcp"]
-    dhcp-server network remove [find address="$guestIPAddress"]
+    dhcp-server network remove [find address="$guestNetwork/$guestNetMask"]
     firewall nat remove [find src-address="$guestIPAddress"]
     firewall filter remove [find in-interface="$guestBridge"]
   }
 
   # Residents WiFi network:
   /interface wireless {
-    security-profiles add name="local" mode=dynamic-keys \
+    security-profiles add name=local mode=dynamic-keys \
     authentication-types=wpa2-psk wpa2-pre-shared-key=$localWlanKey
     set $localWlanInterface band=5ghz-onlyn disabled=no \
     frequency=$wlanFrequency mode=ap-bridge security-profile=local \
@@ -78,11 +79,11 @@
 
     # Guests WiFi network:
     /interface wireless {
-      security-profiles add name="guest" mode=dynamic-keys \
+      security-profiles add name=guest mode=dynamic-keys \
       authentication-types=wpa2-psk wpa2-pre-shared-key=$guestWlanKey
       add disabled=no master-interface=$localWlanInterface \
-      mode=ap-bridge name=$guestWlanInterface ssid=$guestWlanSSID \
-      wds-default-bridge=$guestBridge wps-mode=disabled
+      mode=ap-bridge name=$guestWlanInterface security-profile=guest \
+      ssid=$guestWlanSSID wds-default-bridge=$guestBridge wps-mode=disabled
     }
 
     # Guests bridge port:
@@ -93,7 +94,8 @@
         address add address=$guestIPAddress interface=$guestBridge network=$guestNetwork
         pool add name=guest-pool ranges=$guestLeaseRange
         dhcp-server add address-pool=guest-pool disabled=no interface=$guestBridge name=guest-dhcp
-        dhcp-server network add address=$guestIPAddress dns-server=$guestDNSServer gateway=10.1.0.1 netmask=24
+        dhcp-server network add address="$guestNetwork/$guestNetMask" \
+        dns-server=$guestDNSServer gateway=10.1.0.1 netmask=$guestNetMask
       }
     }
 
