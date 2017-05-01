@@ -38,14 +38,14 @@
 # Switch:
 #------------------------------------------------------------------------------
 
-# Switch 1:
+# Switch chip 1:
 /interface ethernet {
   set [ find default-name=ether3 ] master-port=ether2
   set [ find default-name=ether4 ] master-port=ether2
   set [ find default-name=ether5 ] master-port=ether2
 }
 
-# Switch 2:
+# Switch chip 2:
 /interface ethernet {
   set [ find default-name=ether7 ] master-port=ether6
   set [ find default-name=ether8 ] master-port=ether6
@@ -66,6 +66,29 @@
 interface=vlan6 max-mru=1492 max-mtu=1492 name=pppoe-out1 password=adslppp \
 service-name=FTTH use-peer-dns=yes user=adslppp@telefonicanetpa
 /ip firewall nat add action=masquerade chain=srcnat out-interface=pppoe-out1
+
+#------------------------------------------------------------------------------
+# Wired LAN:
+#------------------------------------------------------------------------------
+
+# Cleanup:
+/ip {
+  address remove [find interface="bridge1"]
+  pool remove [find name="dhcp"]
+  dhcp-server remove [find name="dhcp1"]
+  dhcp-server network remove [find address="192.168.1.0/24"]
+}
+
+# Gateway IP:
+/ip address add address=192.168.1.1/24 interface=bridge1 network=192.168.1.0
+
+# Wired DHCP:
+:if ( $dhcpEnabled = 1 ) do={ /ip {
+    pool add name=dhcp ranges="192.168.1.100-192.168.1.254"
+    dhcp-server add address-pool=dhcp disabled=no interface="bridge1" name=dhcp1
+    dhcp-server network add address=192.168.1.0/24 dns-server=8.8.8.8 gateway=192.168.1.1
+  }
+}
 
 #------------------------------------------------------------------------------
 # Wireless:
@@ -119,20 +142,18 @@ service-name=FTTH use-peer-dns=yes user=adslppp@telefonicanetpa
       ssid="$guestWlanSSID" wds-default-bridge="$guestBridge" wps-mode=disabled
     }
 
-    # Guests bridge port:
+    # Guests bridge-port, gateway IP and firewall:
     /interface bridge port add bridge="$guestBridge" interface="$guestWlanInterface"
+    /ip address add address="$guestGateway/$guestNetMask" interface="$guestBridge" network="$guestNetwork"
+    /ip firewall filter add action=drop chain=forward in-interface="$guestBridge" out-interface=!pppoe-out1
 
     # Guests DHCP:
     :if ( $dhcpEnabled = 1 ) do={ /ip {
-        address add address="$guestGateway/$guestNetMask" interface="$guestBridge" network="$guestNetwork"
         pool add name=guest-pool ranges="$guestLeaseRange"
         dhcp-server add address-pool=guest-pool disabled=no interface="$guestBridge" name=guest-dhcp
         dhcp-server network add address="$guestNetwork/$guestNetMask" \
         dns-server="$guestDNSServer" gateway="$guestGateway" netmask="$guestNetMask"
       }
     }
-
-    # Guests firewall:
-    /ip firewall filter add action=drop chain=forward in-interface="$guestBridge" out-interface=!pppoe-out1
   }
 }
