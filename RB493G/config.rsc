@@ -35,6 +35,21 @@
 }
 
 #------------------------------------------------------------------------------
+# PPPoE Client:
+#------------------------------------------------------------------------------
+
+# Cleanup:
+/interface vlan remove [find name="vlan6"]
+/interface pppoe-client remove [find name="pppoe-out1"]
+
+# FTTH:
+/interface vlan add interface=ether1 name=vlan6 vlan-id=6
+/interface pppoe-client add add-default-route=yes allow=pap,chap disabled=no \
+interface=vlan6 max-mru=1492 max-mtu=1492 name=pppoe-out1 password=adslppp \
+service-name=FTTH use-peer-dns=yes user=adslppp@telefonicanetpa
+/ip firewall nat add action=masquerade chain=srcnat out-interface=pppoe-out1
+
+#------------------------------------------------------------------------------
 # Wireless:
 #------------------------------------------------------------------------------
 
@@ -101,8 +116,8 @@
 
     # Guests firewall:
     /ip firewall {
-      nat add action=masquerade chain=srcnat out-interface=FTTH src-address="$guestGateway/$guestNetMask"
-      filter add action=drop chain=forward in-interface="$guestBridge" out-interface=!FTTH
+      nat add action=masquerade chain=srcnat out-interface=pppoe-out1 src-address="$guestGateway/$guestNetMask"
+      filter add action=drop chain=forward in-interface="$guestBridge" out-interface=!pppoe-out1
     }
   }
 }
