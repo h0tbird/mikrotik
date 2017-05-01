@@ -99,7 +99,7 @@ service-name=FTTH use-peer-dns=yes user=adslppp@telefonicanetpa
 }
 
 #------------------------------------------------------------------------------
-# Wireless:
+# Residents wireless:
 #------------------------------------------------------------------------------
 
 :if ( $wlanEnabled = 1 ) do={
@@ -129,12 +129,16 @@ service-name=FTTH use-peer-dns=yes user=adslppp@telefonicanetpa
 
   # Residents WiFi network:
   /interface wireless {
-    security-profiles add name=local mode=dynamic-keys \
-    authentication-types=wpa2-psk wpa2-pre-shared-key="$localWlanKey"
+    security-profiles set [ find default=yes ] authentication-types=wpa2-psk \
+    mode=dynamic-keys wpa2-pre-shared-key="$localWlanKey"
     set $localWlanInterface band=5ghz-onlyn disabled=no \
-    frequency="$wlanFrequency" mode=ap-bridge security-profile=local \
+    frequency="$wlanFrequency" mode=ap-bridge security-profile=default \
     ssid="$localWlanSSID" country=spain hide-ssid=no wireless-protocol=802.11
   }
+
+#------------------------------------------------------------------------------
+# Guests wireless:
+#------------------------------------------------------------------------------
 
   :if ( $wlanGuestEnabled = 1 ) do={
 
