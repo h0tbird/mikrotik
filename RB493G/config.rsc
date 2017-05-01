@@ -12,13 +12,13 @@
 :local localWlanSSID "XXX-LOCAL_WLAN_SSID-XXX"
 :local localWlanKey "XXX-LOCAL_WLAN_KEY-XXX"
 
-:local guestBridge "guest1"
+:local guestBridge "guests1"
 :local guestWlanInterface "wlan2"
 :local guestNetMask "24"
-:local guestGateway "10.1.0.1"
-:local guestNetwork "10.1.0.0"
+:local guestGateway "192.168.2.1"
+:local guestNetwork "192.168.2.0"
 :local guestDNSServer "8.8.8.8"
-:local guestLeaseRange "10.1.0.100-10.1.0.254"
+:local guestLeaseRange "192.168.2.100-192.168.2.254"
 :local guestWlanSSID "XXX-GUEST_WLAN_SSID-XXX"
 :local guestWlanKey "XXX-GUEST_WLAN_KEY-XXX"
 
@@ -35,6 +35,24 @@
 }
 
 #------------------------------------------------------------------------------
+# Switch:
+#------------------------------------------------------------------------------
+
+# Switch 1:
+/interface ethernet {
+  set [ find default-name=ether3 ] master-port=ether2
+  set [ find default-name=ether4 ] master-port=ether2
+  set [ find default-name=ether5 ] master-port=ether2
+}
+
+# Switch 2:
+/interface ethernet {
+  set [ find default-name=ether7 ] master-port=ether6
+  set [ find default-name=ether8 ] master-port=ether6
+  set [ find default-name=ether9 ] master-port=ether6
+}
+
+#------------------------------------------------------------------------------
 # PPPoE Client:
 #------------------------------------------------------------------------------
 
@@ -42,7 +60,7 @@
 /interface vlan remove [find name="vlan6"]
 /interface pppoe-client remove [find name="pppoe-out1"]
 
-# FTTH:
+# Fibre to the home:
 /interface vlan add interface=ether1 name=vlan6 vlan-id=6
 /interface pppoe-client add add-default-route=yes allow=pap,chap disabled=no \
 interface=vlan6 max-mru=1492 max-mtu=1492 name=pppoe-out1 password=adslppp \
@@ -115,9 +133,6 @@ service-name=FTTH use-peer-dns=yes user=adslppp@telefonicanetpa
     }
 
     # Guests firewall:
-    /ip firewall {
-      nat add action=masquerade chain=srcnat out-interface=pppoe-out1 src-address="$guestGateway/$guestNetMask"
-      filter add action=drop chain=forward in-interface="$guestBridge" out-interface=!pppoe-out1
-    }
+    /ip firewall filter add action=drop chain=forward in-interface="$guestBridge" out-interface=!pppoe-out1
   }
 }
