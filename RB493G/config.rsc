@@ -68,10 +68,16 @@ service-name=FTTH use-peer-dns=yes user=adslppp@telefonicanetpa
 /ip firewall nat add action=masquerade chain=srcnat out-interface=pppoe-out1
 
 #------------------------------------------------------------------------------
-# Wired LAN:
+# Residents LAN:
 #------------------------------------------------------------------------------
 
-# Cleanup:
+# Cleanup bridge:
+/interface bridge {
+  port remove [find bridge="bridge1"]
+  remove [find name="bridge1"]
+}
+
+# Cleanup IP:
 /ip {
   address remove [find interface="bridge1"]
   pool remove [find name="dhcp"]
@@ -79,10 +85,12 @@ service-name=FTTH use-peer-dns=yes user=adslppp@telefonicanetpa
   dhcp-server network remove [find address="192.168.1.0/24"]
 }
 
-# Gateway IP:
+# Residents bridge, bridge-port and gateway IP:
+/interface bridge add name=bridge1
+/interface bridge port add bridge=bridge1 interface=wlan1
 /ip address add address=192.168.1.1/24 interface=bridge1 network=192.168.1.0
 
-# Wired DHCP:
+# Residents DHCP:
 :if ( $dhcpEnabled = 1 ) do={ /ip {
     pool add name=dhcp ranges="192.168.1.100-192.168.1.254"
     dhcp-server add address-pool=dhcp disabled=no interface="bridge1" name=dhcp1
