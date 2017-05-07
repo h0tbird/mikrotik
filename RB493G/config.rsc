@@ -53,6 +53,24 @@
 }
 
 #------------------------------------------------------------------------------
+# Router services:
+#------------------------------------------------------------------------------
+
+# Disabled:
+/ip service {
+  set telnet disabled=yes
+  set api disabled=yes
+  set winbox disabled=yes
+  set api-ssl disabled=yes
+}
+
+# Enabled:
+/ip service {
+  set ftp disabled=no
+  set www disabled=no
+  set www disabled=no
+}
+#------------------------------------------------------------------------------
 # PPPoE Client:
 #------------------------------------------------------------------------------
 
