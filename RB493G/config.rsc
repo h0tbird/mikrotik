@@ -60,12 +60,19 @@
 /interface vlan remove [find name="vlan6"]
 /interface pppoe-client remove [find name="pppoe-out1"]
 
-# Fibre to the home:
-/interface vlan add interface=ether1 name=vlan6 vlan-id=6
-/interface pppoe-client add add-default-route=yes allow=pap,chap disabled=no \
-interface=vlan6 max-mru=1492 max-mtu=1492 name=pppoe-out1 password=adslppp \
-service-name=FTTH use-peer-dns=yes user=adslppp@telefonicanetpa
-/ip firewall nat add action=masquerade chain=srcnat out-interface=pppoe-out1
+# VLAN and PPPoE:
+/interface {
+  vlan add interface=ether1 name=vlan6 vlan-id=6
+  pppoe-client add add-default-route=yes allow=pap,chap disabled=no \
+  interface=vlan6 max-mru=1492 max-mtu=1492 name=pppoe-out1 password=adslppp \
+  service-name=FTTH use-peer-dns=yes user=adslppp@telefonicanetpa
+}
+
+# NAT and firewall:
+/ip firewall {
+  nat add action=masquerade chain=srcnat out-interface=pppoe-out1
+  filter add action=drop chain=input in-interface=pppoe-out1
+}
 
 #------------------------------------------------------------------------------
 # Residents LAN:
