@@ -29,3 +29,10 @@ curl -sT config.rsc ftp://192.168.1.1 --user user:pass
 ```
 /system reset-configuration keep-users=yes no-defaults=yes skip-backup=yes run-after-reset=config.rsc
 ```
+
+#### Downgrade:
+
+Upload `.npk` files for the previous version you would like to downgrade to then run:
+```
+/system package downgrade
+```
