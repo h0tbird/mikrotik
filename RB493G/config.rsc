@@ -11,6 +11,8 @@
 :local localWlanInterface "wlan1"
 :local localWlanSSID "XXX-LOCAL_WLAN_SSID-XXX"
 :local localWlanKey "XXX-LOCAL_WLAN_KEY-XXX"
+:local localNetwork "192.168.1.0"
+:local localNetMask "24"
 
 :local guestBridge "guests1"
 :local guestWlanInterface "wlan2"
@@ -21,6 +23,10 @@
 :local guestLeaseRange "192.168.2.100-192.168.2.254"
 :local guestWlanSSID "XXX-GUEST_WLAN_SSID-XXX"
 :local guestWlanKey "XXX-GUEST_WLAN_KEY-XXX"
+
+:local plexIP1 "192.168.1.199"
+:local plexIP2 "192.168.1.200"
+:local plexPort "32400"
 
 #------------------------------------------------------------------------------
 # Packages:
@@ -120,13 +126,13 @@
 }
 
 # Gateway IP:
-/ip address add address=192.168.1.1/24 interface=bridge1 network=192.168.1.0
+/ip address add address=192.168.1.1/24 interface=bridge1 network="$localNetwork"
 
 # DHCP server:
 :if ( $dhcpEnabled = 1 ) do={ /ip {
     pool add name=dhcp ranges="192.168.1.100-192.168.1.254"
     dhcp-server add address-pool=dhcp disabled=no interface="bridge1" name=dhcp1
-    dhcp-server network add address=192.168.1.0/24 dns-server=8.8.8.8 gateway=192.168.1.1
+    dhcp-server network add address="$localNetwork/$localNetMask" dns-server=8.8.8.8 gateway=192.168.1.1
   }
 }
 
@@ -200,4 +206,14 @@
       }
     }
   }
+}
+
+#------------------------------------------------------------------------------
+# PLEX media server:
+#------------------------------------------------------------------------------
+
+/ip firewall nat {
+  add action=dst-nat chain=dstnat dst-port="$plexPort" protocol=tcp to-addresses="$plexIP1" to-ports="$plexPort"
+  add action=masquerade chain=srcnat dst-address="$plexIP1" dst-port="$plexPort" out-interface=bridge1 protocol=tcp src-address="$localNetwork/$localNetMask"
+  add action=masquerade chain=srcnat dst-address="$plexIP2" dst-port="$plexPort" out-interface=bridge1 protocol=tcp src-address="$localNetwork/$localNetMask"
 }
