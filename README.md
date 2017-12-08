@@ -24,6 +24,11 @@ Transfer the file:
 curl -sT config.rsc ftp://192.168.1.1 --user user:pass
 ```
 
+Conveniently:
+```
+./bin/upload RB493G/config.rsc
+```
+
 #### Reset and load:
 
 ```

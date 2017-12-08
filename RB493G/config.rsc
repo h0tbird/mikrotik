@@ -7,6 +7,7 @@
 
 :local wlanGuestEnabled 1
 :local wlanFrequency "auto"
+:local wlanBand "2ghz-b/g"
 
 :local localWlanInterface "wlan1"
 :local localWlanSSID "XXX-LOCAL_WLAN_SSID-XXX"
@@ -114,7 +115,7 @@
   address remove [find interface="bridge1"]
   pool remove [find name="dhcp"]
   dhcp-server remove [find name="dhcp1"]
-  dhcp-server network remove [find address="192.168.1.0/24"]
+  dhcp-server network remove [find address="$localNetwork/$localNetMask"]
 }
 
 # Bridge and bridge-ports:
@@ -169,7 +170,7 @@
   /interface wireless {
     security-profiles set [ find default=yes ] authentication-types=wpa2-psk \
     mode=dynamic-keys wpa2-pre-shared-key="$localWlanKey"
-    set $localWlanInterface band=5ghz-onlyn disabled=no \
+    set $localWlanInterface band="$wlanBand" disabled=no \
     frequency="$wlanFrequency" mode=ap-bridge security-profile=default \
     ssid="$localWlanSSID" country=spain hide-ssid=no wireless-protocol=802.11
   }
