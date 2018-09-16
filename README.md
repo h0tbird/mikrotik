@@ -35,6 +35,16 @@ Conveniently:
 /system reset-configuration keep-users=yes no-defaults=yes skip-backup=yes run-after-reset=config.rsc
 ```
 
+If config is not loaded after restart try...
+```
+/import config.rsc
+```
+
+...or add a dirty delay in the script:
+```
+:delay 15s
+```
+
 #### Downgrade:
 
 Upload `.npk` files for the previous version you would like to downgrade to then run:

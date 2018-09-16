@@ -1,33 +1,39 @@
 #------------------------------------------------------------------------------
+# Delay because meh:
+#------------------------------------------------------------------------------
+
+:delay 15s
+
+#------------------------------------------------------------------------------
 # Variables:
 #------------------------------------------------------------------------------
 
-:local dhcpEnabled 0
-:local wlanEnabled 0
+:global dhcpEnabled 0
+:global wlanEnabled 0
 
-:local wlanGuestEnabled 1
-:local wlanFrequency "auto"
-:local wlanBand "2ghz-b/g"
+:global wlanGuestEnabled 1
+:global wlanFrequency "auto"
+:global wlanBand "2ghz-b/g"
 
-:local localWlanInterface "wlan1"
-:local localWlanSSID "XXX-LOCAL_WLAN_SSID-XXX"
-:local localWlanKey "XXX-LOCAL_WLAN_KEY-XXX"
-:local localNetwork "192.168.1.0"
-:local localNetMask "24"
+:global localWlanInterface "wlan1"
+:global localWlanSSID "XXX-LOCAL_WLAN_SSID-XXX"
+:global localWlanKey "XXX-LOCAL_WLAN_KEY-XXX"
+:global localNetwork "192.168.1.0"
+:global localNetMask "24"
 
-:local guestBridge "guests1"
-:local guestWlanInterface "wlan2"
-:local guestNetMask "24"
-:local guestGateway "192.168.2.1"
-:local guestNetwork "192.168.2.0"
-:local guestDNSServer "8.8.8.8"
-:local guestLeaseRange "192.168.2.100-192.168.2.254"
-:local guestWlanSSID "XXX-GUEST_WLAN_SSID-XXX"
-:local guestWlanKey "XXX-GUEST_WLAN_KEY-XXX"
+:global guestBridge "guests1"
+:global guestWlanInterface "wlan2"
+:global guestNetMask "24"
+:global guestGateway "192.168.2.1"
+:global guestNetwork "192.168.2.0"
+:global guestDNSServer "8.8.8.8"
+:global guestLeaseRange "192.168.2.100-192.168.2.254"
+:global guestWlanSSID "XXX-GUEST_WLAN_SSID-XXX"
+:global guestWlanKey "XXX-GUEST_WLAN_KEY-XXX"
 
-:local plexIP1 "192.168.1.199"
-:local plexIP2 "192.168.1.200"
-:local plexPort "32400"
+:global plexIP1 "192.168.1.199"
+:global plexIP2 "192.168.1.200"
+:global plexPort "32400"
 
 #------------------------------------------------------------------------------
 # Packages:
@@ -39,24 +45,6 @@
 
 :if ([:len [/system package find name="dhcp" !disabled]] != 0) do={
   :set dhcpEnabled 1
-}
-
-#------------------------------------------------------------------------------
-# Switch chips:
-#------------------------------------------------------------------------------
-
-# Switch chip 1:
-/interface ethernet {
-  set [ find default-name=ether3 ] master-port=ether2
-  set [ find default-name=ether4 ] master-port=ether2
-  set [ find default-name=ether5 ] master-port=ether2
-}
-
-# Switch chip 2:
-/interface ethernet {
-  set [ find default-name=ether7 ] master-port=ether6
-  set [ find default-name=ether8 ] master-port=ether6
-  set [ find default-name=ether9 ] master-port=ether6
 }
 
 #------------------------------------------------------------------------------
@@ -76,6 +64,16 @@
   set ftp disabled=no
   set www disabled=no
   set ssh disabled=no
+}
+
+#------------------------------------------------------------------------------
+# Global firewall:
+#------------------------------------------------------------------------------
+
+/ip firewall filter {
+  add chain=input connection-state=established action=accept
+  add chain=input connection-state=related action=accept
+  add chain=input connection-state=invalid action=drop
 }
 
 #------------------------------------------------------------------------------
@@ -122,8 +120,14 @@
 /interface bridge {
   add name=bridge1
   port add bridge=bridge1 interface=wlan1
-  port add bridge=bridge1 interface=ether2
-  port add bridge=bridge1 interface=ether6
+  port add bridge=bridge1 hw=yes interface=ether2
+  port add bridge=bridge1 hw=yes interface=ether3
+  port add bridge=bridge1 hw=yes interface=ether4
+  port add bridge=bridge1 hw=yes interface=ether5
+  port add bridge=bridge1 hw=yes interface=ether6
+  port add bridge=bridge1 hw=yes interface=ether7
+  port add bridge=bridge1 hw=yes interface=ether8
+  port add bridge=bridge1 hw=yes interface=ether9
 }
 
 # Gateway IP:
