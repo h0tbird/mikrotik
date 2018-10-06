@@ -19,7 +19,11 @@
 :global localWlanSSID "XXX-LOCAL_WLAN_SSID-XXX"
 :global localWlanKey "XXX-LOCAL_WLAN_KEY-XXX"
 :global localNetwork "192.168.1.0"
+:global localGateway "192.168.1.1"
 :global localNetMask "24"
+
+:global startDHCP "192.168.1.100"
+:global endDHCP "192.168.1.200"
 
 :global guestBridge "guests1"
 :global guestWlanInterface "wlan2"
@@ -137,13 +141,13 @@
 }
 
 # Gateway IP:
-/ip address add address=192.168.1.1/24 interface=bridge1 network="$localNetwork"
+/ip address add address="$localGateway/$localNetMask" interface=bridge1 network="$localNetwork"
 
 # DHCP server:
 :if ( $dhcpEnabled = 1 ) do={ /ip {
-    pool add name=dhcp ranges="192.168.1.100-192.168.1.254"
+    pool add name=dhcp ranges="$startDHCP-$endDHCP"
     dhcp-server add address-pool=dhcp disabled=no interface="bridge1" name=dhcp1
-    dhcp-server network add address="$localNetwork/$localNetMask" dns-server=8.8.8.8 gateway=192.168.1.1
+    dhcp-server network add address="$localNetwork/$localNetMask" dns-server=8.8.8.8 gateway="$localGateway"
     dhcp-server lease add address="$synologyIP1" mac-address="$synologyMAC1" server=dhcp1
     dhcp-server lease add address="$synologyIP2" mac-address="$synologyMAC2" server=dhcp1
   }
