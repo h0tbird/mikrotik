@@ -31,8 +31,14 @@
 :global guestWlanSSID "XXX-GUEST_WLAN_SSID-XXX"
 :global guestWlanKey "XXX-GUEST_WLAN_KEY-XXX"
 
-:global plexIP1 "192.168.1.199"
-:global plexIP2 "192.168.1.200"
+:global primaryNTP "81.19.96.148"
+:global secondaryNTP "213.251.52.234"
+
+:global synologyMAC1 "00:11:32:61:F7:EA"
+:global synologyMAC2 "00:11:32:61:F7:EB"
+:global synologyIP1 "192.168.1.201"
+:global synologyIP2 "192.168.1.202"
+
 :global plexPort "32400"
 
 #------------------------------------------------------------------------------
@@ -138,6 +144,8 @@
     pool add name=dhcp ranges="192.168.1.100-192.168.1.254"
     dhcp-server add address-pool=dhcp disabled=no interface="bridge1" name=dhcp1
     dhcp-server network add address="$localNetwork/$localNetMask" dns-server=8.8.8.8 gateway=192.168.1.1
+    dhcp-server lease add address="$synologyIP1" mac-address="$synologyMAC1" server=dhcp1
+    dhcp-server lease add address="$synologyIP2" mac-address="$synologyMAC2" server=dhcp1
   }
 }
 
@@ -214,11 +222,20 @@
 }
 
 #------------------------------------------------------------------------------
+# NTP client and server:
+#------------------------------------------------------------------------------
+
+/system ntp {
+  client set enabled=yes primary-ntp="$primaryNTP" secondary-ntp="$secondaryNTP"
+  server set enabled=yes manycast=no
+}
+
+#------------------------------------------------------------------------------
 # PLEX media server:
 #------------------------------------------------------------------------------
 
 /ip firewall nat {
-  add action=dst-nat chain=dstnat dst-port="$plexPort" protocol=tcp to-addresses="$plexIP1" to-ports="$plexPort"
-  add action=masquerade chain=srcnat dst-address="$plexIP1" dst-port="$plexPort" out-interface=bridge1 protocol=tcp src-address="$localNetwork/$localNetMask"
-  add action=masquerade chain=srcnat dst-address="$plexIP2" dst-port="$plexPort" out-interface=bridge1 protocol=tcp src-address="$localNetwork/$localNetMask"
+  add action=dst-nat chain=dstnat dst-port="$plexPort" protocol=tcp to-addresses="$synologyIP1" to-ports="$plexPort"
+  add action=masquerade chain=srcnat dst-address="$synologyIP1" dst-port="$plexPort" out-interface=bridge1 protocol=tcp src-address="$localNetwork/$localNetMask"
+  add action=masquerade chain=srcnat dst-address="$synologyIP2" dst-port="$plexPort" out-interface=bridge1 protocol=tcp src-address="$localNetwork/$localNetMask"
 }
